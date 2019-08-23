@@ -1,0 +1,2 @@
+verbose=True
+listen=ss://RC4-MD5:somebody@:7777
