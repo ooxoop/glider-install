@@ -1,5 +1,6 @@
 # glider-install
 glider一键安装脚本
+项目地址： https://github.com/nadoo/glider
 
 Centos 7.3 / Ubuntu 16.04 / Debian 8.9 下测试通过
 
