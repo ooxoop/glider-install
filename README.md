@@ -3,6 +3,24 @@ glider一键安装脚本 <br>
 glider项目地址： https://github.com/nadoo/glider
 
 Centos 7.3 / Ubuntu 16.04 / Debian 8.9 下测试通过
+```
+
+ glider 一键安装管理脚本beta [v]
+ -- ooxoop | lajiblog.com --
+
+ 1. 安装 glider
+————————————
+ 2. 启动 glider
+ 3. 停止 glider
+ 4. 重启 glider
+————————————
+ 5. 修改 配置文件
+————————————
+
+ 当前状态: 已安装 并 已启动
+ 
+```
+
 
 配置文件还是要自己写，有空再更了
 
