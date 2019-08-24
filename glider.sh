@@ -87,6 +87,12 @@ service_glider(){
 		chmod +x /etc/init.d/glider
 		chkconfig --add glider
 		chkconfig glider on
+	else
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/ooxoop/glider-install/master/glider_debian.service -O /etc/init.d/glider; then
+			echo -e "${Error} glider服务 管理脚本下载失败 !" && exit 1
+		fi
+		chmod +x /etc/init.d/glider
+		update-rc.d -f glider defaults
 	fi
 	echo -e "${Info} glider服务 管理脚本下载完成 !"
 }
