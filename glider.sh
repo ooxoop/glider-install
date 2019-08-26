@@ -30,6 +30,19 @@ check_pid(){
 	PID=`ps -ef | grep "glider" | grep -v "grep" | grep -v "glider.sh"| grep -v "init.d" | grep -v "service" | awk '{print $2}'`
 }
 
+get_ip(){
+	ip=$(wget -qO- -t1 -T2 ipinfo.io/ip)
+	if [[ -z "${ip}" ]]; then
+		ip=$(wget -qO- -t1 -T2 api.ip.sb/ip)
+		if [[ -z "${ip}" ]]; then
+			ip=$(wget -qO- -t1 -T2 members.3322.org/dyndns/getip)
+			if [[ -z "${ip}" ]]; then
+				ip="VPS_IP"
+			fi
+		fi
+	fi
+}
+
 check_new_ver(){
 	echo -e "${Info} 请输入 glider 版本号，格式如：[ 1.34.0 ]，获取地址：[ https://github.com/nadoo/glider/releases ]"
 	read -e -p "默认回车自动获取最新版本号:" glider_new_ver
@@ -94,7 +107,125 @@ service_glider(){
 		chmod +x /etc/init.d/glider
 		update-rc.d -f glider defaults
 	fi
-	echo -e "${Info} glider服务 管理脚本下载完成 !"
+	echo -e "${Info} glider服务 管理脚本安装完毕 !"
+}
+
+config_ss(){
+	Set_config_port
+	Set_config_password
+	Set_config_method
+	ss_link="ss://${ss_method}:${ss_password}@:${port}"
+	if [[ -e "/root/.glider/glider.conf" ]]; then
+		rm -rf /root/.glider/glider.conf
+	fi
+	echo -e "verbose=True\nlisten=${ss_link}" >> /root/.glider/glider.conf
+}
+
+Set_config_port(){
+	while true
+	do
+	echo -e "请输入要设置的 端口"
+	read -e -p "(默认: 9999):" port
+	[[ -z "$port" ]] && port="9999"
+	echo $((${port}+0)) &>/dev/null
+	if [[ $? == 0 ]]; then
+		if [[ ${port} -ge 1 ]] && [[ ${port} -le 65535 ]]; then
+			echo && echo ${Separator_1} && echo -e "	端口 : ${Green_font_prefix}${port}${Font_color_suffix}" && echo ${Separator_1} && echo
+			break
+		else
+			echo -e "${Error} 请输入正确的数字(1-65535)"
+		fi
+	else
+		echo -e "${Error} 请输入正确的数字(1-65535)"
+	fi
+	done
+}
+
+Set_config_password(){
+	echo "请输入要设置的Shadowsocks账号 密码"
+	read -e -p "(默认: somebody):" ss_password
+	[[ -z "${ss_password}" ]] && ss_password="somebody"
+	echo && echo ${Separator_1} && echo -e "	密码 : ${Green_font_prefix}${ss_password}${Font_color_suffix}" && echo ${Separator_1} && echo
+}
+
+Set_config_method(){
+	echo -e "请选择要设置的Shadowsocks账号 加密方式
+	
+${Green_font_prefix}1.${Font_color_suffix} RC4-MD5
+
+${Green_font_prefix}2.${Font_color_suffix} AES-128-GCM
+${Green_font_prefix}3.${Font_color_suffix} AES-192-GCM
+${Green_font_prefix}4.${Font_color_suffix} AES-256-GCM
+
+${Green_font_prefix}5.${Font_color_suffix} CHACHA20
+${Green_font_prefix}6.${Font_color_suffix} CHACHA20-IETF
+${Green_font_prefix}7.${Font_color_suffix} XCHACHA20
+
+${Green_font_prefix}8.${Font_color_suffix} CHACHA20-IETF-POLY1305
+${Green_font_prefix}9.${Font_color_suffix} XCHACHA20-IETF-POLY1305
+${Tip} CHACHA20-*系列加密方式，需要额外安装依赖 libsodium ，否则会无法启动glider !" && echo
+	read -e -p "(默认: 6. CHACHA20-IETF):" ss_method
+	[[ -z "${ss_method}" ]] && ss_method="6"
+	if [[ ${ss_method} == "1" ]]; then
+		ss_method="RC4-MD5"
+	elif [[ ${ss_method} == "2" ]]; then
+		ss_method="AEAD_AES_128_GCM"
+	elif [[ ${ss_method} == "3" ]]; then
+		ss_method="AEAD_AES_192_GCM"
+	elif [[ ${ss_method} == "4" ]]; then
+		ss_method="AEAD_AES_256_GCM"
+	elif [[ ${ss_method} == "5" ]]; then
+		ss_method="CHACHA20"
+	elif [[ ${ss_method} == "6" ]]; then
+		ss_method="CHACHA20-IETF"
+	elif [[ ${ss_method} == "7" ]]; then
+		ss_method="XCHACHA20"
+	elif [[ ${ss_method} == "8" ]]; then
+		ss_method="AEAD_CHACHA20_IETF_POLY1305"
+	elif [[ ${ss_method} == "9" ]]; then
+		ss_method="AEAD_XCHACHA20_IETF_POLY1305"
+	else
+		ss_method="CHACHA20-IETF"
+	fi
+	echo && echo ${Separator_1} && echo -e "	加密 : ${Green_font_prefix}${ss_method}${Font_color_suffix}" && echo ${Separator_1} && echo
+}
+
+View_config(){
+	listen=`cat /root/.glider/glider.conf | grep -v '#' | grep "listen=" | awk -F "=" '{print $NF}'`
+	if [[ "${listen}" != "" ]]; then
+		echo -e "当前监听端口的协议是： 
+${Green_font_prefix}${listen}${Font_color_suffix}"
+	else
+		echo "读取不到配置信息，请检查配置文件"
+	fi
+	forward=`cat /root/.glider/glider.conf | grep -v '#' | grep "forward=" | awk -F "=" '{print $NF}'`
+	if [[ "${forward}" != "" ]]; then
+		echo -e "监听接收的数据将转发到： 
+${Green_font_prefix}${forward}${Font_color_suffix}"
+	fi
+}
+
+Set_config(){
+	echo && echo -e "glider 快速配置，请选择你需要的 配置
+
+${Green_font_prefix}1.${Font_color_suffix} 设置一个Shadowsocks代理
+--部署一个普通的ss代理
+${Green_font_prefix}2.${Font_color_suffix} 设置一个支持网易云音乐解锁的Shadowsocks代理
+--该选项将会自动部署安装网易云音乐解锁代理 UnblockNeteaseMusic
+${Green_font_prefix}3.${Font_color_suffix} 设置一个Socks5代理，将该代理转发到Shadowsocks代理
+--在国内中转部署，可作为telegram内置代理使用，出国协议为ss" && echo
+	read -e -p "默认：取消" config_code
+	[[ -z "${config_code}" ]] && config_code="0"
+	if [[ ${config_code} == "1" ]]; then
+		config_ss
+		Restart_glider
+	elif [[ ${config_code} == "2" ]]; then
+		config_ss_music
+	elif [[ ${config_code} == "3" ]]; then
+		config_ss_telegram
+	else
+		exit 1
+	fi
 }
 
 Install_glider(){
@@ -102,6 +233,7 @@ Install_glider(){
 	check_new_ver
 	download_glider
 	service_glider
+	echo -e "glider 已安装完成！请重新运行脚本进行配置~"
 }
 
 Start_glider(){
@@ -109,6 +241,7 @@ Start_glider(){
 	check_pid
 	[[ ! -z ${PID} ]] && echo -e "${Error} glider 正在运行，请检查 !" && exit 1
 	/etc/init.d/glider start
+	View_config
 }
 
 Stop_glider(){
@@ -123,6 +256,7 @@ Restart_glider(){
 	check_pid
 	[[ ! -z ${PID} ]] && /etc/init.d/glider stop
 	/etc/init.d/glider start
+	View_config
 }
 
 
@@ -135,7 +269,10 @@ ${Green_font_prefix} 2.${Font_color_suffix} 启动 glider
 ${Green_font_prefix} 3.${Font_color_suffix} 停止 glider
 ${Green_font_prefix} 4.${Font_color_suffix} 重启 glider
 ————————————
-${Green_font_prefix} 5.${Font_color_suffix} 修改 配置文件
+${Green_font_prefix} 5.${Font_color_suffix} 查看 当前配置
+${Green_font_prefix} 6.${Font_color_suffix} 设置 配置文件
+${Green_font_prefix} 7.${Font_color_suffix} 打开 配置文件
+${Green_font_prefix} 8.${Font_color_suffix} 查看 日志文件
 ————————————" && echo
 if [[ -e "/usr/bin/glider" ]]; then
 	check_pid
@@ -152,7 +289,7 @@ read -e -p " 请输入数字 [0-10]:" num
 case "$num" in
 	1)
 	Install_glider
-	;;	
+	;;
 	2)
 	Start_glider
 	;;
@@ -163,7 +300,17 @@ case "$num" in
 	Restart_glider
 	;;
 	5)
+	View_config
+	;;
+	6)
+	Set_config
+	;;
+	7)
 	vi /root/.glider/glider.conf
+	Restart_glider
+	;;
+	8)
+	cat /root/.glider/glider.log
 	;;
 	*)
 	echo "请输入正确数字 [0-10]"
