@@ -74,8 +74,8 @@ download_glider(){
 	else
 		bit="arm64"
 	fi
-	wget -N --no-check-certificate "https://github.com/nadoo/glider/releases/download/v${glider_new_ver}/glider-v${glider_new_ver}-linux-${bit}.tar.gz"
-	glider_name="glider-v${glider_new_ver}-linux-${bit}"
+	wget -N --no-check-certificate "https://github.com/nadoo/glider/releases/download/v${glider_new_ver}/glider_${glider_new_ver}_linux_${bit}.tar.gz"
+	glider_name="glider_${glider_new_ver}_linux_${bit}"
 	
 	[[ ! -s "${glider_name}.tar.gz" ]] && echo -e "${Error} glider 压缩包下载失败 !" && exit 1
 	tar zxvf "${glider_name}.tar.gz"
