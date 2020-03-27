@@ -6,7 +6,7 @@ Centos 7.3 / Ubuntu 16.04 / Debian 8.9 下测试通过
 ```
 
  glider 一键安装管理脚本beta [v]
- -- ooxoop | lajiblog.com --
+ -- 四分体 | sifenti.com --
 
  1. 安装 glider
 ————————————
